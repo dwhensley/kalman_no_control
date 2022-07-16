@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use numpy::{PyArray1, PyReadonlyArray1};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
@@ -86,12 +87,18 @@ impl ScalarKalman {
 }
 
 #[pyfunction]
-fn kfilter(filter: &mut ScalarKalman, vec: Vec<Float>) -> PyResult<Vec<Float>> {
-    let mut out = Vec::with_capacity(vec.len());
-    for &v in vec.iter() {
+fn kfilter<'py>(
+    py: Python<'py>,
+    filter: &mut ScalarKalman,
+    v: PyReadonlyArray1<Float>,
+) -> PyResult<&'py PyArray1<Float>> {
+    let len = v.len();
+    let mut out = Vec::with_capacity(len);
+    let v = v.as_array();
+    for &v in v.iter() {
         out.push(filter.advance(v)?)
     }
-    Ok(out)
+    Ok(PyArray1::from_vec(py, out))
 }
 
 /// A Python module implemented in Rust.
